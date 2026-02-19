@@ -1,0 +1,135 @@
+RELATÓRIO DE IMPLEMENTAÇÃO — SISTEMA DE GESTÃO DE INVENTÁRIO/STOCKS
+Aluno: Marcolino Marcos
+Projecto nº 13 — Gestão de Inventário/Stocks
+Data: 23-01-2026
+
+
+1CONTEXTO DO ENUNCIADO
+
+O professor solicitou que o projecto suportasse consultas e funcionalidades
+relacionadas com:
+- Listar produtos de um grupo (prefixo do portfólio) numa determinada data
+  (passada ou presente)
+- Trazer preço e stock nessa data
+- Filtrar por preço superior a um valor mínimo
+- Ordenar alfabeticamente pela designação (descrição do produto)
+- Usar diferentes abordagens de persistência (Spring Data JPA):
+  a) Consultas Derivadas
+  b) Consultas JPQL
+  c) Consultas SQL Nativas
+
+
+
+
+
+
+
+ALTERAÇÕES REALIZADAS (CORRECÇÃO E ADEQUAÇÃO AO PROJECTO)
+
+
+Alteração no ProdutoService (modo "DERIVADA")
+
+Antes:
+- O service chamava um método inexistente:
+  produtoRepository.findByFkPortfolioStartingWithOrderByPortfolio_DescricaoAsc(prefixo)
+
+Depois:
+- O service passou a usar o método já existente no projecto:
+  produtoRepository.listarPorPrefixo(prefixo)
+
+Motivo:
+- Garantir compilação imediata e reduzir risco de inconsistências.
+- Manter o padrão actual do projecto sem quebrar código já existente.
+
+Ordenação alfabética pela designação (exigência do enunciado)
+
+O método listarPorPrefixo ordena por código, mas o enunciado pede que ao escolher
+o item no menu, o programa apresente os produtos ordenados alfabeticamente pela
+designação (descricao do portfolio).
+
+Foi adicionado no fluxo DERIVADA:
+- Ordenação no stream por descricao (case-insensitive).
+
+Resultado:
+- A lista final fica por ordem alfabética da designação.
+
+
+
+
+
+CONSULTAS / CÁLCULOS NECESSÁRIOS PARA A FUNCIONALIDADE
+
+
+Para cumprir a listagem "preço + stock na data", o service precisa de:
+
+Stock acumulado até uma data (MovimentacaoInventarioRepository)
+
+- Somatório das movimentações até dataRef:
+  Entrada (E) soma
+  Saída  (S) subtrai
+
+Método utilizado/necessário:
+- calcularStockAteData(codigo, dataRef)
+
+Objectivo:
+- Calcular o stock "histórico" e não apenas o stock actual.
+
+Preço vigente numa data (ProdutoPrecoRepository)
+
+- Buscar o preço cujo intervalo englobe a dataRef:
+  dataInicio <= dataRef
+  e (dataFim is null OU dataFim > dataRef)
+
+Método utilizado/necessário:
+- buscarPrecoNaData(codigo, dataRef)
+
+Objectivo:
+- Permitir consultar preço histórico e não apenas o preço actual.
+
+
+
+
+
+COMO A FUNCIONALIDADE FICA A OPERAR (MODO DERIVADA)
+
+Fluxo final (DERIVADA):
+Buscar produtos do grupo usando prefixo (listarPorPrefixo)
+ Para cada produto:
+   - Calcular stock até dataRef
+   - Buscar preço vigente em dataRef
+
+
+Filtrar apenas produtos com:
+   - preco != null
+   - preco > precoMin
+
+
+Ordenar alfabeticamente pela descricao
+
+Retornar a lista final com:
+   - fkPortfolio (código)
+   - descricao (designação)
+   - preco
+   - stock
+   - dataRef
+
+
+
+
+
+
+EXEMPLO DE TESTE (POSTMAN)
+
+
+Endpoint (exemplo):
+GET /inventario/produtos/stock-preco
+
+Exemplo de URL:
+http://localhost:8080/inventario/produtos/stock-preco?prefixo=1.1&dataRef=2026-01-23T00:00:00&precoMin=1000&modo=DERIVADA
+
+Expectativa:
+- Lista de produtos do grupo (prefixo)
+- Com stock calculado até 2026-01-23
+- Com preço vigente nessa data
+- Apenas produtos com preço acima de 1000
+- Ordenados alfabeticamente pela designação

@@ -1,0 +1,59 @@
+RELATÓRIO – ALTERAÇÕES PARA A DEFESA
+Projecto: Sistema de Gestão de Inventário/Stocks
+Aluno: Marcolino Marcos
+Data: __13__/__02__/2026
+
+1
+
+3. Estrutura Técnica Implementada
+Foram criadas as seguintes camadas específicas para a defesa:
+
+3.1 Controller
+- Classe: ucan.gestaoInventario.controllers.defesa.DefesaController
+- Responsabilidade:
+  - Expor endpoints REST para listar produtos por preço/stock na data
+  - Expor endpoint para gerar encomenda automática
+
+3.2 Service
+- Classe: ucan.gestaoInventario.services.defesa.DefesaService
+- Responsabilidade:
+  - Validar parâmetros de entrada
+  - Executar a consulta de listagem
+  - Criar encomenda e itens (encomenda_item) automaticamente
+  - Retornar um RTO com o resultado da operação
+
+3.3 Repository (Consulta de Defesa)
+- Classe: ucan.gestaoInventario.repositories.defesa.DefesaRepository
+- Responsabilidade:
+  - Executar SQL nativo com NamedParameterJdbcTemplate
+  - Mapear resultados para RTO (DefesaProdutoPrecoStockRTO)
+
+4. DTO/RTO Criados
+- ucan.gestaoInventario.dto.rto.defesa.DefesaProdutoPrecoStockRTO
+  Campos: fkPortfolio, descricao, preco, stock, dataRef
+
+- ucan.gestaoInventario.dto.rto.defesa.DefesaGerarEncomendaDTO
+  Campos: fkArmazem, dataRef, precoMin, prefixo(opcional), fkFornecedor
+
+- ucan.gestaoInventario.dto.rto.defesa.DefesaEncomendaGeradaRTO
+  Campos: pkEncomenda, totalItens, dataEncomenda
+
+5. Endpoints Criados (Demonstração)
+5.1 Listagem de preços + stock na data com preço mínimo
+GET /api/defesa/produtos/precos-stock
+Parâmetros:
+- fkArmazem (Integer)
+- dataRef (LocalDateTime)
+- precoMin (Double)
+- prefixo (String opcional)
+
+5.2 Gerar encomenda automática
+POST /api/defesa/encomendas/gerar
+Body (JSON):
+{
+  "fkArmazem": 1,
+  "dataRef": "2026-02-13T10:00:00",
+  "precoMin": 100,
+  "prefixo": "2.1.",
+  "fkFornecedor": 7
+}
